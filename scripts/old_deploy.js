@@ -8,26 +8,26 @@ const hre = require("hardhat");
 const path = require("path");
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  // const currentTimestampInSeconds = Math.round(Date.now() / 1000);
+  // const unlockTime = currentTimestampInSeconds + 60;
 
-  const lockedAmount = hre.ethers.utils.parseEther("10");
+  // const lockedAmount = hre.ethers.utils.parseEther("10");
 
-  const Lock = await hre.ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  const Voting = await hre.ethers.getContractFactory("Voting");
+  const voting = await Voting.deploy(unlockTime, { value: lockedAmount });
 
-  await lock.deployed();
+  await voting.deployed();
 
-  console.log(
-    `Lock with ${ethers.utils.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+  // console.log(
+  //   `Lock with ${ethers.utils.formatEther(
+  //     lockedAmount
+  //   )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
+  // );
 
-  save_artifacts(lock);
+  save_artifacts(voting);
 }
 
-function save_artifacts(lock) {
+function save_artifacts(voting) {
   const fs = require("fs");
   
   const contractsDir = path.join(__dirname, "..", "web", "src", "contract-artifacts");
@@ -40,6 +40,8 @@ function save_artifacts(lock) {
     path.join(contractsDir, "contract-address.json"),
     JSON.stringify({ contract_address: lock.address }, undefined, 2)
   );
+
+  console.log(voting);
 
   const lock_artifact = artifacts.readArtifactSync("Lock");
 
