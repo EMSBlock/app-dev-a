@@ -16,6 +16,6 @@
 
 ## Plan
 
-- [] Implement a basic voting contract that allows for people to agree with a notification
-- [] Spread votes so each is unique and then consensus is found across each
-- [] Build a basic front-end to show the system to people
+- [ ] Implement a basic voting contract that allows for people to agree with a notification
+- [ ] Spread votes so each is unique and then consensus is found across each
+- [ ] Build a basic front-end to show the system to people
