@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 // console.log command
-import "../../../libraries/contract/hardhat/console.sol";
+// import "../../../libraries/contract/hardhat/console.sol";
 
 /*
 * @title Voting Contract
@@ -36,7 +36,7 @@ contract Voting {
         vote_threshold = _vote_threshold;
     }
 
-    function addNotification(string memory message) public {
+    function add_notification(string memory message) public {
         /*
         * @notice Creates a new notification
         * @param 
@@ -57,6 +57,16 @@ contract Voting {
         emit NewNotification(msg.sender, message);
 
         checkConsensus(notificationId);
+    }
+
+    function get_notification(uint _notification_id) view public returns(Notification memory return_notification) {
+        /*
+        * @notice Gets the notification of the notification id input
+        * @param Notification Id
+        * @returns Notification information
+        */
+        require(_notification_id < notificationsCount, "Notification id doesnt exist");
+        return notifications[_notification_id];
     }
 
     function vote(uint notificationId) public {
@@ -90,32 +100,3 @@ contract Voting {
     }
 
 }
-
-
-
-// uint public unlockTime;
-// address payable public owner;
-
-// event Withdrawal(uint amount, uint when);
-
-// constructor(uint _unlockTime) payable {
-//     require(
-//         block.timestamp < _unlockTime,
-//         "Unlock time should be in the future"
-//     );
-
-//     unlockTime = _unlockTime;
-//     owner = payable(msg.sender);
-// }
-
-// function withdraw() public {
-//     // Uncomment this line, and the import of "hardhat/console.sol", to print a log in your terminal
-//     console.log("Unlock time is %o and block timestamp is %o", unlockTime, block.timestamp);
-
-//     require(block.timestamp >= unlockTime, "You can't withdraw yet");
-//     require(msg.sender == owner, "You aren't the owner");
-
-//     emit Withdrawal(address(this).balance, block.timestamp);
-
-//     owner.transfer(address(this).balance);
-// }
