@@ -1,6 +1,6 @@
 import React from "react";
 
-export function Transfer({ transferTokens, tokenSymbol }) {
+export function CreateNotification({ createNotification, tokenSymbol }) {
   return (
     <div>
       <h4>Transfer</h4>
@@ -11,21 +11,17 @@ export function Transfer({ transferTokens, tokenSymbol }) {
           event.preventDefault();
 
           const formData = new FormData(event.target);
-          const to = formData.get("to");
-          const amount = formData.get("amount");
+          const _note = formData.get("_note");
 
-          if (to && amount) {
-            transferTokens(to, amount);
+          console.log(_note);
+          if (_note) {
+            createNotification(_note);
           }
         }}
       >
         <div className="form-group">
-          <label>Amount of {tokenSymbol}</label>
-          <input className="form-control" type="number" step="1" name="amount" placeholder="1" required />
-        </div>
-        <div className="form-group">
-          <label>Recipient address</label>
-          <input className="form-control" type="text" name="to" required />
+          <label>Note of message</label>
+          <input className="form-control" step="1" name="_note" placeholder="1" required />
         </div>
         <div className="form-group">
           <input className="btn btn-primary" type="submit" value="Transfer" />

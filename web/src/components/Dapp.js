@@ -14,7 +14,8 @@ import contractAddress from "../contract-artifacts/contract-address.json";
 import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
 import { Loading } from "./Loading";
-import { Transfer } from "./Transfer";
+import { CreateNotification } from "./CreateNotification";
+import { GetNotifications } from "./GetNotifications";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
@@ -75,21 +76,17 @@ export class Dapp extends React.Component {
     // if (!this.state.tokenData || !this.state.balance) {
     //   return <Loading />;
     // }
-
+    
     // If everything is loaded, we render the application.
     return (
       <div className="container p-4">
         <div className="row">
           <div className="col-12">
             <h1>
-              Hi
+              Voting Contract Web Interface
             </h1>
             <p>
-              Welcome <b>{this.state.selectedAddress}</b>, you have{" "}
-              <b>
-                  Test
-              </b>
-              .
+              Welcome <b>{this.state.selectedAddress}</b>
             </p>
           </div>
         </div>
@@ -130,14 +127,26 @@ export class Dapp extends React.Component {
               callback.
             */}
             {(
-              <Transfer
-                transferTokens={() =>
-                  this._transferTokens()
+              <CreateNotification
+                createNotification={() =>
+                  this._create_notification()
                 }
               />
             )}
           </div>
         </div>
+
+        <div className="row">
+          <div className="col-12">
+            {(
+              <GetNotifications
+                getNotification={() =>
+                  this._get_notification()
+                }
+              />
+            )}
+          </div>
+        </div>        
       </div>
     );
   }
@@ -203,19 +212,21 @@ export class Dapp extends React.Component {
     this._provider = new ethers.providers.Web3Provider(window.ethereum);
     // Then, we initialize the contract using that provider and the token's
     // artifact. You can do this same thing with your contracts.
-    this._lock = new ethers.Contract(
+    this._voting = new ethers.Contract(
       contractAddress.contract_address,
       contractData.abi,
       this._provider.getSigner(0)
     );
   }
 
-  // This method sends an ethereum transaction to transfer tokens.
-  // While this action is specific to this application, it illustrates how to
-  // send a transaction.
-  async _transferTokens() { //(to, amount) {
-    try {
-        await this._lock.withdraw(); 
+
+  async _create_notification(_note = "Test") {
+    //_note = "test";
+    let inputted = _note;
+    try{
+      console.log(inputted);
+      console.log("hello2");
+      await this._voting.add_notification(inputted.toString());
     } catch (error) {
       // We check the error code to see if this error was produced because the
       // user rejected a tx. If that's the case, we do nothing.
@@ -232,6 +243,76 @@ export class Dapp extends React.Component {
       this.setState({ txBeingSent: undefined });
     }
   }
+
+  async _get_notification() {
+    //var message = "No notifications";
+    const messages = [];
+    var notification = 0;
+    var note = "Missing Notification"
+    try {
+      try {
+        let x = await this._voting.notificationsCount();
+        if (x > 0) {
+          for (let i = 0; i < x+1; i++) {
+            try {
+              notification = await this._voting.get_notification(i);
+              if (notification.code != -32603) {
+                note = notification;
+              }
+            } catch (error) {
+              note = "Missing Notification";
+            } finally {
+              messages.push(note);
+            }
+          } 
+        } else {
+            messages.push("Problem");
+        }
+      } catch (error) {
+        messages.push("Problem")
+      } finally {
+        document.getElementById("resultDiv").innerHTML = messages;
+      }
+    } catch (error) {
+      // We check the error code to see if this error was produced because the
+      // user rejected a tx. If that's the case, we do nothing.
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+      // Other errors are logged and stored in the Dapp's state. This is used to
+      // show them to the user, and for debugging.
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      // If we leave the try/catch, we aren't sending a tx anymore, so we clear
+      // this part of the state.
+      this.setState({ txBeingSent: undefined });
+    }
+  }
+
+
+  // // This method sends an ethereum transaction to transfer tokens.
+  // // While this action is specific to this application, it illustrates how to
+  // // send a transaction.
+  // async _transferTokens() { //(to, amount) {
+  //   try {
+  //       await this._lock.withdraw(); 
+  //   } catch (error) {
+  //     // We check the error code to see if this error was produced because the
+  //     // user rejected a tx. If that's the case, we do nothing.
+  //     if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+  //       return;
+  //     }
+  //     // Other errors are logged and stored in the Dapp's state. This is used to
+  //     // show them to the user, and for debugging.
+  //     console.error(error);
+  //     this.setState({ transactionError: error });
+  //   } finally {
+  //     // If we leave the try/catch, we aren't sending a tx anymore, so we clear
+  //     // this part of the state.
+  //     this.setState({ txBeingSent: undefined });
+  //   }
+  // }
 
   // This method just clears part of the state.
   _dismissTransactionError() {
