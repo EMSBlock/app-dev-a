@@ -1,6 +1,6 @@
 import React from "react";
 
-export function CreateNotification({ createNotification, tokenSymbol }) {
+export function CreateNotification({createNotification}) {
   return (
     <div>
       <h4>Transfer</h4>
@@ -13,7 +13,6 @@ export function CreateNotification({ createNotification, tokenSymbol }) {
           const formData = new FormData(event.target);
           const _note = formData.get("_note");
 
-          console.log(_note);
           if (_note) {
             createNotification(_note);
           }

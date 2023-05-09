@@ -18,7 +18,9 @@ import { CreateNotification } from "./CreateNotification";
 import { GetNotifications } from "./GetNotifications";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
+import { BuildNotificationsList } from "./BuildNotificationsList";
 import { NoTokensMessage } from "./NoTokensMessage";
+
 
 // This is the default id used by the Hardhat Network
 const HARDHAT_NETWORK_ID = '31337';
@@ -128,14 +130,14 @@ export class Dapp extends React.Component {
             */}
             {(
               <CreateNotification
-                createNotification={() =>
-                  this._create_notification()
+                createNotification={(_note) =>
+                  this._create_notification(_note)
                 }
               />
             )}
           </div>
         </div>
-
+        
         <div className="row">
           <div className="col-12">
             {(
@@ -145,7 +147,7 @@ export class Dapp extends React.Component {
                 }
               />
             )}
-          </div>
+          </div>          
         </div>        
       </div>
     );
@@ -220,13 +222,9 @@ export class Dapp extends React.Component {
   }
 
 
-  async _create_notification(_note = "Test") {
-    //_note = "test";
-    let inputted = _note;
+  async _create_notification(_note) {
     try{
-      console.log(inputted);
-      console.log("hello2");
-      await this._voting.add_notification(inputted.toString());
+      await this._voting.add_notification(_note.toString());
     } catch (error) {
       // We check the error code to see if this error was produced because the
       // user rejected a tx. If that's the case, we do nothing.
@@ -249,29 +247,26 @@ export class Dapp extends React.Component {
     const messages = [];
     var notification = 0;
     var note = "Missing Notification"
+    let x = 0
     try {
       try {
-        let x = await this._voting.notificationsCount();
+        x = await this._voting.notificationsCount();
         if (x > 0) {
-          for (let i = 0; i < x+1; i++) {
+          for (let i = 0; i < x; i++) {
             try {
               notification = await this._voting.get_notification(i);
-              if (notification.code != -32603) {
-                note = notification;
-              }
+              note = notification;
             } catch (error) {
               note = "Missing Notification";
             } finally {
               messages.push(note);
             }
           } 
-        } else {
-            messages.push("Problem");
         }
       } catch (error) {
         messages.push("Problem")
       } finally {
-        document.getElementById("resultDiv").innerHTML = messages;
+        //document.getElementById("resultDiv").innerHTML = messages;
       }
     } catch (error) {
       // We check the error code to see if this error was produced because the
@@ -288,31 +283,9 @@ export class Dapp extends React.Component {
       // this part of the state.
       this.setState({ txBeingSent: undefined });
     }
+    BuildNotificationsList(messages)
   }
 
-
-  // // This method sends an ethereum transaction to transfer tokens.
-  // // While this action is specific to this application, it illustrates how to
-  // // send a transaction.
-  // async _transferTokens() { //(to, amount) {
-  //   try {
-  //       await this._lock.withdraw(); 
-  //   } catch (error) {
-  //     // We check the error code to see if this error was produced because the
-  //     // user rejected a tx. If that's the case, we do nothing.
-  //     if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-  //       return;
-  //     }
-  //     // Other errors are logged and stored in the Dapp's state. This is used to
-  //     // show them to the user, and for debugging.
-  //     console.error(error);
-  //     this.setState({ transactionError: error });
-  //   } finally {
-  //     // If we leave the try/catch, we aren't sending a tx anymore, so we clear
-  //     // this part of the state.
-  //     this.setState({ txBeingSent: undefined });
-  //   }
-  // }
 
   // This method just clears part of the state.
   _dismissTransactionError() {
