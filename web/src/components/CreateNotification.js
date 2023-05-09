@@ -23,7 +23,7 @@ export function CreateNotification({createNotification}) {
           <input className="form-control" step="1" name="_note" placeholder="1" required />
         </div>
         <div className="form-group">
-          <input className="btn btn-primary" type="submit" value="Transfer" />
+          <input className="btn btn-primary" type="submit" value="Create Notification" />
         </div>
       </form>
     </div>

@@ -1,9 +1,8 @@
-#notifications-table {
-    border-collapse: collapse;
+#notifications-list {
     width: 100%;
     background-color: aquamarine;
 }
 
-#notifications-table {
+#notifications-list {
     text-align: center;
 }

@@ -145,8 +145,25 @@ export class Dapp extends React.Component {
                 getNotification={() =>
                   this._get_notification()
                 }
+                submitVote={(_id) =>
+                  this._submit_vote(_id)
+                }
               />
             )}
+
+            <h4>Notifications List</h4>
+            <table id="notifications-list">
+              <thead>
+                  <tr>
+                      <td>Title</td>
+                      <td>Votes</td>
+                      <td>Creator</td>
+                      <td>Consensus</td>
+                      <td>Click</td>
+                  </tr>
+              </thead>
+              <tbody id="notifications-table"></tbody>
+            </table>
           </div>          
         </div>        
       </div>
@@ -283,7 +300,31 @@ export class Dapp extends React.Component {
       // this part of the state.
       this.setState({ txBeingSent: undefined });
     }
-    BuildNotificationsList(messages)
+    //BuildNotificationsList(messages, this._submit_vote);
+    //console.log(messages[0])
+    return messages
+  }
+
+  async _submit_vote(_id) {
+    console.log("Voting")
+    console.log(_id);
+    try{
+      await this._voting.vote(_id);
+    } catch (error) {
+      // We check the error code to see if this error was produced because the
+      // user rejected a tx. If that's the case, we do nothing.
+      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        return;
+      }
+      // Other errors are logged and stored in the Dapp's state. This is used to
+      // show them to the user, and for debugging.
+      console.error(error);
+      this.setState({ transactionError: error });
+    } finally {
+      // If we leave the try/catch, we aren't sending a tx anymore, so we clear
+      // this part of the state.
+      this.setState({ txBeingSent: undefined });
+    }
   }
 
 
