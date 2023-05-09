@@ -6,8 +6,6 @@ function BuildButton (_id, submitVote) {
     _clicker.setAttribute("type", "submit");
     _clicker.setAttribute("value", "Vote");
 
-    
-    
     let _button = document.createElement("form");
     //_button.setAttribute("onsubmit", "roar" );
     _button.onsubmit = (event)=>{submitVote(_id);}
@@ -45,7 +43,8 @@ export function GetNotifications({getNotification, submitVote}) {
             var _td5 = document.createElement("td");
 
             var el = document.createElement("div");
-            el = BuildButton(i, submitVote);            
+            el = BuildButton(i, submitVote);   
+            //console.log(el);         
             _td5.appendChild(el);     
 
             _tr.appendChild(_td1);
