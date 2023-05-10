@@ -59,6 +59,7 @@ contract Voting {
         checkConsensus(notificationId);
     }
 
+    // Maybe dont need this
     function get_notification(uint _notification_id) view public returns(Notification memory return_notification) {
         /*
         * @notice Gets the notification of the notification id input
@@ -75,10 +76,10 @@ contract Voting {
         * @param 
         */
         require(notificationId < notificationsCount, "Invalid notification id");
-        require(!hasVoted[msg.sender], "You have already voted");
+        //require(!hasVoted[msg.sender], "You have already voted");
 
         Notification storage notification = notifications[notificationId];
-        require(!notification.consensusReached, "Consensus already reached for this notification");
+        //require(!notification.consensusReached, "Consensus already reached for this notification");
 
         notification.votes++;
         hasVoted[msg.sender] = true;

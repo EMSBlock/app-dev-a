@@ -3,28 +3,19 @@ import React from "react";
 function BuildButton (_id, submitVote) {
     
     let _clicker = document.createElement("input");
-    _clicker.setAttribute("type", "submit");
+    _clicker.setAttribute("type", "button");
     _clicker.setAttribute("value", "Vote");
 
     let _button = document.createElement("form");
     //_button.setAttribute("onsubmit", "roar" );
-    _button.onsubmit = (event)=>{submitVote(_id);}
+    _button.onclick = (event)=>{submitVote(_id);}
     _button.appendChild(_clicker);
 
     return (_button);
-
-    // return (
-    //         "<div><form onSubmit={(event)=>{submitVote(i);}}><input className='btn btn-primary' type='button' value='Vote'></input></form></div>"
-    // );
 }
 
-export function GetNotifications({getNotification, submitVote}) {
-
-    let promise_note = getNotification();
-    
-    promise_note.then((value)=> {
-        //console.log(value)
-        const notifications = value;
+export function GetNotifications({notifications, submitVote}) {
+    if (notifications !== undefined) {
         var _tr = document.createElement("tr");
         document.getElementById("notifications-table").innerHTML = "";
         for (let i = 0; i < notifications.length; i++) {
@@ -43,8 +34,7 @@ export function GetNotifications({getNotification, submitVote}) {
             var _td5 = document.createElement("td");
 
             var el = document.createElement("div");
-            el = BuildButton(i, submitVote);   
-            //console.log(el);         
+            el = BuildButton(i, submitVote);         
             _td5.appendChild(el);     
 
             _tr.appendChild(_td1);
@@ -55,5 +45,5 @@ export function GetNotifications({getNotification, submitVote}) {
 
             document.getElementById("notifications-table").appendChild(_tr);
         }
-    })
+    }
 }

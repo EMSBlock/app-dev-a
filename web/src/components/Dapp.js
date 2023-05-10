@@ -36,7 +36,7 @@ export class Dapp extends React.Component {
     // You don't need to follow this pattern, but it's an useful example.
     this.initialState = {
       // The info of the token (i.e. It's Name and symbol)
-      tokenData: undefined,
+      notifications_list: undefined,
       // The user's address and balance
       selectedAddress: undefined,
       balance: undefined,
@@ -141,10 +141,8 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
             {(
-              <GetNotifications
-                getNotification={() =>
-                  this._get_notification()
-                }
+              <GetNotifications 
+                notifications={this.state.notifications_list}
                 submitVote={(_id) =>
                   this._submit_vote(_id)
                 }
@@ -203,8 +201,8 @@ export class Dapp extends React.Component {
       }
       
       this._initialize(newAddress);
-      
     });
+    this._get_notification();
   }
 
   _initialize(userAddress) {
@@ -220,10 +218,7 @@ export class Dapp extends React.Component {
 
     // Fetching the token data and the user's balance are specific to this
     // sample project, but you can reuse the same initialization pattern.
-    this._initializeEthers();
-    
-    //this._getTokenData();
-    //this._startPollingData();
+    this._initializeEthers();    
   }
 
   async _initializeEthers() {
@@ -241,6 +236,7 @@ export class Dapp extends React.Component {
 
   async _create_notification(_note) {
     try{
+      console.log("Try new notiification")
       await this._voting.add_notification(_note.toString());
     } catch (error) {
       // We check the error code to see if this error was produced because the
@@ -256,6 +252,7 @@ export class Dapp extends React.Component {
       // If we leave the try/catch, we aren't sending a tx anymore, so we clear
       // this part of the state.
       this.setState({ txBeingSent: undefined });
+      this._get_notification();
     }
   }
 
@@ -267,11 +264,13 @@ export class Dapp extends React.Component {
     let x = 0
     try {
       try {
+        console.log("Try notifications Count")
         x = await this._voting.notificationsCount();
         if (x > 0) {
           for (let i = 0; i < x; i++) {
             try {
-              notification = await this._voting.get_notification(i);
+              console.log("Try get notifications")
+              notification = await this._voting.notifications(i);
               note = notification;
             } catch (error) {
               note = "Missing Notification";
@@ -299,17 +298,20 @@ export class Dapp extends React.Component {
       // If we leave the try/catch, we aren't sending a tx anymore, so we clear
       // this part of the state.
       this.setState({ txBeingSent: undefined });
+      
+      this.setState({notifications_list: messages});
     }
-    //BuildNotificationsList(messages, this._submit_vote);
-    //console.log(messages[0])
-    return messages
   }
 
+
   async _submit_vote(_id) {
-    console.log("Voting")
+    console.log("Voting");
     console.log(_id);
     try{
-      await this._voting.vote(_id);
+      console.log("Try vote")
+      await this._voting.vote(_id).then(
+        this._get_notification()
+      );
     } catch (error) {
       // We check the error code to see if this error was produced because the
       // user rejected a tx. If that's the case, we do nothing.
@@ -325,7 +327,18 @@ export class Dapp extends React.Component {
       // this part of the state.
       this.setState({ txBeingSent: undefined });
     }
+    // promise.then((event) => {
+    //   
+    // };
+    //return false
   }
+
+
+
+
+
+  // ERROR CATCHERS
+
 
 
   // This method just clears part of the state.
