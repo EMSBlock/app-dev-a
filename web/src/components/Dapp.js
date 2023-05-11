@@ -22,6 +22,7 @@ import { BuildNotificationsList } from "./BuildNotificationsList";
 import { NoTokensMessage } from "./NoTokensMessage";
 
 
+
 // This is the default id used by the Hardhat Network
 const HARDHAT_NETWORK_ID = '31337';
 
@@ -174,6 +175,29 @@ export class Dapp extends React.Component {
   //   //this._stopPollingData();
   // }
 
+  async setCookie(cname, cvalue, ex_mins) {
+    const d = new Date();
+    d.setTime(d.getTime() + (ex_mins*60*1000));
+    let expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  }
+
+  async getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(let i = 0; i <ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) === 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
   async _connectWallet() {
     // This method is run when the user clicks the Connect. It connects the
     // dapp to the user's wallet, and initializes it.
@@ -234,50 +258,21 @@ export class Dapp extends React.Component {
   }
 
 
-  async _create_notification(_note) {
-    try{
-      console.log("Try new notiification")
-      await this._voting.add_notification(_note.toString());
-    } catch (error) {
-      // We check the error code to see if this error was produced because the
-      // user rejected a tx. If that's the case, we do nothing.
-      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        return;
-      }
-      // Other errors are logged and stored in the Dapp's state. This is used to
-      // show them to the user, and for debugging.
-      console.error(error);
-      this.setState({ transactionError: error });
-    } finally {
-      // If we leave the try/catch, we aren't sending a tx anymore, so we clear
-      // this part of the state.
-      this.setState({ txBeingSent: undefined });
-      this._get_notification();
-    }
-  }
+  
 
   async _get_notification() {
     //var message = "No notifications";
     const messages = [];
     var notification = 0;
     var note = "Missing Notification"
-    let x = 0
+    let x = 0;
     try {
       try {
-        console.log("Try notifications Count")
         x = await this._voting.notificationsCount();
         if (x > 0) {
           for (let i = 0; i < x; i++) {
-            try {
-              console.log("Try get notifications")
-              notification = await this._voting.notifications(i);
-              note = notification;
-            } catch (error) {
-              note = "Missing Notification";
-            } finally {
-              messages.push(note);
-            }
-          } 
+            messages.push(await this._voting.notifications(i));
+          }
         }
       } catch (error) {
         messages.push("Problem")
@@ -298,39 +293,68 @@ export class Dapp extends React.Component {
       // If we leave the try/catch, we aren't sending a tx anymore, so we clear
       // this part of the state.
       this.setState({ txBeingSent: undefined });
-      
       this.setState({notifications_list: messages});
+    }
+  }
+
+  async _create_notification(_note) {
+    if (this.txBeingSent === undefined) {
+      this.setState({txBeingSent: true})
+      try{
+        this._voting.add_notification(_note.toString()).then(() => {
+          this._get_notification();
+        });
+      } catch (error) {
+        // We check the error code to see if this error was produced because the
+        // user rejected a tx. If that's the case, we do nothing.
+        if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+          return;
+        }
+        // Other errors are logged and stored in the Dapp's state. This is used to
+        // show them to the user, and for debugging.
+        console.error(error);
+        this.setState({ transactionError: error });
+      } finally {
+        // If we leave the try/catch, we aren't sending a tx anymore, so we clear
+        // this part of the state.
+        this.setState({ txBeingSent: undefined });
+        
+      }
     }
   }
 
 
   async _submit_vote(_id) {
-    console.log("Voting");
-    console.log(_id);
-    try{
-      console.log("Try vote")
-      await this._voting.vote(_id).then(
-        this._get_notification()
-      );
-    } catch (error) {
-      // We check the error code to see if this error was produced because the
-      // user rejected a tx. If that's the case, we do nothing.
-      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        return;
+    if (this.txBeingSent === undefined) {
+      this.setState({txBeingSent: true})
+      try{
+        await this._voting.vote(_id);
+      } catch (error) {
+        // We check the error code to see if this error was produced because the
+        // user rejected a tx. If that's the case, we do nothing.
+        if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+          return;
+        }
+        // Other errors are logged and stored in the Dapp's state. This is used to
+        // show them to the user, and for debugging.
+        console.error(error);
+        this.setState({ transactionError: error });
+      } finally {
+        // If we leave the try/catch, we aren't sending a tx anymore, so we clear
+        // this part of the state.
+        this.setState({ txBeingSent: undefined });
+        this._get_notification();
       }
-      // Other errors are logged and stored in the Dapp's state. This is used to
-      // show them to the user, and for debugging.
-      console.error(error);
-      this.setState({ transactionError: error });
-    } finally {
-      // If we leave the try/catch, we aren't sending a tx anymore, so we clear
-      // this part of the state.
-      this.setState({ txBeingSent: undefined });
     }
-    // promise.then((event) => {
-    //   
-    // };
-    //return false
+  }
+
+  async _notifications_folder() {
+    //const fs = require("../../../node_modules/fs-extra/lib/fs");
+    //const path = require("path");
+    // const dir_notification_artifacts = path.join(__dirname, "..", "notification_artifacts");
+    // if (!fs.existsSync(dir_notification_artifacts)) {
+    //   fs.mkdirSync(dir_notification_artifacts);
+    // }
   }
 
 

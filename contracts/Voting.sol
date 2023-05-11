@@ -60,15 +60,15 @@ contract Voting {
     }
 
     // Maybe dont need this
-    function get_notification(uint _notification_id) view public returns(Notification memory return_notification) {
-        /*
-        * @notice Gets the notification of the notification id input
-        * @param Notification Id
-        * @returns Notification information
-        */
-        require(_notification_id < notificationsCount, "Notification id doesnt exist");
-        return notifications[_notification_id];
-    }
+    // function get_notification(uint _notification_id) view public returns(Notification memory return_notification) {
+    //     /*
+    //     * @notice Gets the notification of the notification id input
+    //     * @param Notification Id
+    //     * @returns Notification information
+    //     */
+    //     require(_notification_id < notificationsCount, "Notification id doesnt exist");
+    //     return notifications[_notification_id];
+    // }
 
     function vote(uint notificationId) public {
         /*
