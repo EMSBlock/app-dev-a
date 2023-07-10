@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 // console.log command
 import "../contract-lib/hardhat/console.sol";
 
+// NOTES
+// Inherint property (If many fake notifications given for certain locations the )
 
 contract NewVoting {
 
@@ -24,26 +26,14 @@ contract NewVoting {
 
     struct Notification {
         address creator;
-        uint creation_time;
+        uint times_out;
     }
 
-    struct Combined {
-        address creator;
-        uint region;
-    }
+    // Notifications made
+    mapping (address => uint) public num_notifications;
 
-    // struct ActiveRegions {
-    //     uint region;
-    //     uint start_time;
-    //     uint disaster_type;
-    // }
-
-    // Map notification to user
-    //uint[] public notification_list;
-    mapping (Combined => bool) public get_used_address;
-    // Map address to the cutoff point in the notifications
-    //      list so search is not through inactive Notifications
-    mapping (address => uint) public get_active_cutoff;
+    // Notifications part of consensus
+    mapping (address => uint) public num_correct_notifications;
 
     // Map user to reputation
     mapping (address => uint) public get_rep;
@@ -58,70 +48,88 @@ contract NewVoting {
         get_authorised[msg.sender] = true;
     }
 
-    function _check_input(uint[] memory _regions) public view {
-        for (uint i=0; i < _regions.length; i++) {
-            require(_regions[i] <= MAX_REGION, "Region is more than number of regions");
-            //require()
-        }
-    }
-
     function _new_notification(uint[] memory _regions, uint _disaster_type) public {
         require(get_authorised[msg.sender] == true, "User is not authorised");
         require(_disaster_type <= NUM_DISASTER_TYPES, "Not a classified type of disaster (0-5)");
-        _check_input(_regions);
 
         Notification memory notification = Notification({
             creator: msg.sender,
-            creation_time: block.timestamp
+            times_out: block.timestamp + TIMEOUT
+            // Could add stake amount too
         });
 
-        //_clean_timeouts(REGION?);
-
+        // Increment how many notifications a user has made
+        num_notifications[msg.sender] += _regions.length;
+        
         for (uint i = 0; i < _regions.length; i++) {
-            require(_regions[i] <= MAX_REGION);
-            require(!get_used_address[Combined({creator: msg.sender, region: _regions[i]})], "Address has already been used for this region");
+            _check_if_notification_works(_regions[i], _disaster_type);
             region_to_type_count[_regions[i]][_disaster_type].push(notification);
+        }
+
+        // REMOVE IF BELOW FUNCTION WORKS
+        // for (uint i = 0; i < _regions.length; i++) {
+        //     require(_regions[i] <= MAX_REGION);
+        //     Notification[] memory current_region = region_to_type_count[_regions[i]][_disaster_type];
+        //     for (uint j = 0; j < current_region.length; j++) {
+        //         // Check notification is still in time (if so check if msg.sender has already given val)
+        //         if (current_region[j].times_out > time_now) {   // I THINK > SIGN IS CORRECT WAY ROUND (NEED TO VERIFIY WITH TEST)
+        //             require(current_region[j].creator != msg.sender, "Address has already been used for this region");
+        //         }
+        //     }
+            
+        // }
+    }
+
+    // Function to check if the input regions and disaster type will work in the new notifications section as an external view function
+    // This can be called outside as view function to validate if region will work beforehand
+    function _check_if_notification_works(uint  _region, uint _disaster_type) public view {
+        require(_region <= MAX_REGION);
+        Notification[] memory current_region = region_to_type_count[_region][_disaster_type];
+        for (uint j = 0; j < current_region.length; j++) {
+            // Check notification is still in time (if so check if msg.sender has already given val)
+            if (current_region[j].times_out > block.timestamp) {   // I THINK > SIGN IS CORRECT WAY ROUND (NEED TO VERIFIY WITH TEST)
+                require(current_region[j].creator != msg.sender, "Address has already been used for this region");
+            }
         }
     }
 
-    // Find timedout notifications of user, remove value from 
-    // function _clean_timeouts(address _clean_address) public {
-    //     if (get_notification_list[_clean_address].length > 0) {
-    //         for (uint i=get_active_cutoff[_clean_address]; i < get_notification_list[_clean_address].length; i++) {
-                
-    //         }
-    //     }
-    // }
-
-
-    function _count_regions(uint _region, uint _disaster_type) external view returns (uint) {
-        return region_to_type_count[_region][_disaster_type].length;
+    // Counts total reputation of all active notifications in the input region
+    function _count_region(uint _region, uint _disaster_type) public view returns (uint count) {
+        require(_region <= MAX_REGION);
+        require(_disaster_type <= NUM_DISASTER_TYPES);
+        count = 0;
+        Notification[] memory current_region = region_to_type_count[_region][_disaster_type];
+        for (uint i = 0; i < current_region.length; i++) {
+            if (current_region[i].times_out > block.timestamp) {
+                count += _get_rep(current_region[i].creator);
+            }
+        }
+        return count;
     }
 
     function _confirm_consensus(uint _region, uint _disaster_type) public {
-        //_check_timeouts
+        uint count = _count_region(_region, _disaster_type);
+        require(count >= THRESHOLD, "Consensus has not been reached");
+        // Update correct notifications count
+        Notification[] memory current_region = region_to_type_count[_region][_disaster_type];
+        for (uint i = 0; i < current_region.length; i++) {
+            if (current_region[i].times_out > block.timestamp) {
+                num_correct_notifications[current_region[i].creator]++;
+            }
+        }
+        // Remove all notifications for that region and disaster type
+        delete region_to_type_count[_region][_disaster_type];
+
+        // CREATE DISASTER CONFIRMED NOTIFICATION
+        
+
+        // Maybe incentivise by giving 10% stake to msg.sender at this point
+
     }
 
-    // function _check_timeouts() public {
-    //     require(get_authorised[msg.sender] == true, "User is not authorised");
-    //     // negative from region_to_type_count values
-    // }
-
-
-
-
-
-    // Input locations in list
-    // Input disaster type
-
-    // Set timeout
-
-    // Add to area, multiple by reputation
-
-    // Check for consensus in area
-
-    // If consensus reached, positive impact reputation
-
-    // If timeout of other inputs, negative impact reputation
-
+    // Get reputation (THIS NEEDS MODIFIED AS CURRENTLY VERY SIMPLE)
+    function _get_rep(address _address_to_update) public view returns (uint) {
+        // Can use number of correct notifications and number of total notifications
+        return num_correct_notifications[_address_to_update];// / num_notifications[_address_to_update];
+    }
 }
