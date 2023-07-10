@@ -18,16 +18,22 @@ contract NewVoting {
 
     uint8 public NUM_DISASTER_TYPES = 5;    // One more than given as 0 also allowed
 
-    // Inital variables
-    uint public vote_threshold;
-
-    // Map user to authorised or not
-    mapping (address => bool) public get_authorised;
+    uint256 public num_disasters;
 
     struct Notification {
         address creator;
         uint times_out;
     }
+
+    struct Disaster {
+        uint disaster_type;
+        uint region;
+        uint time_of_first_notification;
+        uint time_of_consensus;
+    }
+
+    // Map user to authorised or not
+    mapping (address => bool) public get_authorised;
 
     // Notifications made
     mapping (address => uint) public num_notifications;
@@ -35,11 +41,11 @@ contract NewVoting {
     // Notifications part of consensus
     mapping (address => uint) public num_correct_notifications;
 
-    // Map user to reputation
-    mapping (address => uint) public get_rep;
-
     // Map region to type list containing current count
     mapping (uint => Notification[][]) public region_to_type_count;
+
+    // Map disaster id to disaster
+    mapping (uint => Disaster[]) public disasters_confirmed;
 
     
 
@@ -110,17 +116,30 @@ contract NewVoting {
     function _confirm_consensus(uint _region, uint _disaster_type) public {
         uint count = _count_region(_region, _disaster_type);
         require(count >= THRESHOLD, "Consensus has not been reached");
+        uint first_notification;
         // Update correct notifications count
         Notification[] memory current_region = region_to_type_count[_region][_disaster_type];
         for (uint i = 0; i < current_region.length; i++) {
             if (current_region[i].times_out > block.timestamp) {
                 num_correct_notifications[current_region[i].creator]++;
+                if (current_region[i].times_out < first_notification) {
+                    first_notification = current_region[i].times_out;
+                }
             }
         }
+
+        // Creates confirmed disaster
+        num_disasters++;
+        disasters_confirmed[num_disasters] = Disaster({
+            disaster_type: _disaster_type,
+            region: _region,
+            time_of_first_notification: first_notification - THRESHOLD,
+            time_of_consensus: block.timestamp
+        });
+
         // Remove all notifications for that region and disaster type
         delete region_to_type_count[_region][_disaster_type];
 
-        // CREATE DISASTER CONFIRMED NOTIFICATION
         
 
         // Maybe incentivise by giving 10% stake to msg.sender at this point
