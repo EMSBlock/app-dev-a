@@ -2,13 +2,15 @@
 pragma solidity ^0.8.9;
 
 // console.log command
-// import "../../../libraries/contract/hardhat/console.sol";
+import "../contract-lib/hardhat/console.sol";
 
 /*
 * @title Voting Contract
 * @author 0x365
 * @dev
 */
+
+// IMPLEMENT MAPPING OF MSG.SENDER TO BELIEF, SET UP BELIEF IMPROVEMENT FOR IF CONSENSUS REACHED, DECREMENT BELIEF IF CONSENSUS NOT REACHED WITHIN A TIME FRAME
 
 contract Voting {
 
