@@ -4,12 +4,10 @@ const hre = require("hardhat");
 const path = require("path");
 
 async function main() {
-  // Example input voting threshold (constructor variable)
-  const vote_threshold = 3;
   // Gets smart contract ABI
   const Voting = await hre.ethers.getContractFactory("Voting");
   // Deploys smart contract
-  const voting = await Voting.deploy(vote_threshold);
+  const voting = await Voting.deploy();
   // Waits until smart contract is deployed and returns tx
   const tx = await voting.deployed();
   // Outputs transaction to console
