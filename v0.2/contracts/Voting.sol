@@ -12,7 +12,7 @@ contract Voting {
     // Minimum number of votes required for consensus to be reached
     uint256 public THRESHOLD = 10000;
     // Max time after creation that notification is considered active
-    uint256 public TIMEOUT = 1;
+    uint256 public TIMEOUT = 10;
     // Max number of regions available (Currently 1 degree lat lon)
     uint256 public MAX_REGION = 360 * 180;
     // Number of types of disasters
@@ -48,20 +48,34 @@ contract Voting {
     // Map region to type list containing current count
     //mapping (uint => Notification[][]) public region_to_type_count;
     mapping (uint => mapping (uint => Notification[])) public region_to_type_count;
+    //mapping (uint => mapping (uint => mapping (address => uint) ) ) public region_to_type_count;
+
+    // Map user to notification locations
+    // User to region to type to timestamp
+    mapping (address => mapping (uint => mapping (uint => uint) ) ) public user_to_timestamp;
 
     // Map disaster id to disaster
     mapping (uint => Disaster) public disasters_confirmed;
 
     
     // On deploy constructor
+    // Could add address as input to create the first authorised user
     constructor() {
         get_authorised[msg.sender] = true;
         num_notifications[msg.sender] = 1;
         num_correct_notifications[msg.sender] = 1;
     }
 
+    
+    function _authorise_user(address _new_address) public {
+        require(get_authorised[msg.sender] == true, "Only authorised users can authorise new users");
+        get_authorised[_new_address] = true;
+        num_notifications[_new_address] = 0;
+        num_correct_notifications[_new_address] = 0;
+    }
 
-    // Function creates new notification, including validating that notification is allowed to be given by user
+
+    // (PUBLIC) creates new notification, including validating that notification is allowed to be given by user
     function _new_notification(uint[] memory _regions, uint _disaster_type) public {
         console.log("##### Testing checkpoint 0");
         require(get_authorised[msg.sender] == true, "User is not authorised");
@@ -76,39 +90,27 @@ contract Voting {
         // Increment how many notifications a user has made
         num_notifications[msg.sender] += _regions.length;
         console.log("##### Testing checkpoint 3");
-        // Check if user has not previously given notification for this region and type
-        // Then append to array
+        // Checks if user has active notification in region/type and if not adds new notification
         for (uint i = 0; i < _regions.length; i++) {
             console.log("##### Testing checkpoint 4");
-            _check_if_notification_works(_regions[i], _disaster_type);
+            require(_check_active_notification(_regions[i], _disaster_type), "Address already has active notification at this region/type");
             console.log("##### Testing checkpoint 5");
+            user_to_timestamp[msg.sender][_regions[i]][_disaster_type] = block.timestamp + TIMEOUT;
             region_to_type_count[_regions[i]][_disaster_type].push(notification);
-            
         }
         console.log("##### Testing checkpoint Complete");
     }
 
 
-    // Function to check if the input regions and disaster type will work in the new notifications section as an external view function
-    // This can be called outside as view function to validate if region will work beforehand
-    function _check_if_notification_works(uint  _region, uint _disaster_type) public view {
-        console.log("##### Testing checkpoint 40");
-        require(_region <= MAX_REGION);
-        console.log("##### Testing checkpoint 41");
-        Notification[] memory current_region = region_to_type_count[_region][_disaster_type];
-        console.log("##### Testing checkpoint 42");
-        for (uint j = 0; j < current_region.length; j++) {
-            console.log("##### Testing checkpoint 43");
-            // Check notification is still in time (if so check if msg.sender has already given val)
-            if (current_region[j].times_out > block.timestamp) {   // I THINK > SIGN IS CORRECT WAY ROUND (NEED TO VERIFIY WITH TEST)
-                require(current_region[j].creator != msg.sender, "Address has already been used for this region");
-            }
-        }
-        console.log("##### Testing checkpoint 4end");
+    // (PUBLIC VIEW) checks if the user already has an active notification at this region
+    function _check_active_notification(uint _region, uint _disaster_type) public view returns (bool) {
+        require(_region <= MAX_REGION, "Region is outside maximum value");
+        console.log("##### Testing checkpoint 4");
+        return (user_to_timestamp[msg.sender][_region][_disaster_type] < block.timestamp);
     }
 
 
-    // Counts total reputation of all active notifications in the input region
+    // (PUBLIC VIEW) Counts total reputation of all active notifications in the input region
     function _count_region(uint _region, uint _disaster_type) public view returns (uint count) {
         require(_region <= MAX_REGION);
         require(_disaster_type <= NUM_DISASTER_TYPES);
@@ -123,7 +125,7 @@ contract Voting {
     }
     
 
-    // Checks if consensus exists in given region and type and creates disaster_confirmed value
+    // (PUBLIC) Checks if consensus exists in given region and type and creates disaster_confirmed value
     function _confirm_consensus(uint _region, uint _disaster_type) public {
         uint count = _count_region(_region, _disaster_type);
         require(count >= THRESHOLD, "Consensus has not been reached");
@@ -154,7 +156,7 @@ contract Voting {
     }
 
 
-    // Get reputation (THIS NEEDS MODIFIED AS CURRENTLY VERY SIMPLE)
+    // (PUBLIC) Get reputation (THIS NEEDS MODIFIED AS CURRENTLY VERY SIMPLE)
     function _get_rep(address _address_to_update) public view returns (uint) {
         // Can use number of correct notifications and number of total notifications
         return num_correct_notifications[_address_to_update];// / num_notifications[_address_to_update];

@@ -11,14 +11,14 @@ async function main() {
     const voting = await Voting.attach(contractAddress.contract_address);
 
     // Input values
-    regions = [453, 454, 412];
+    regions = [453, 543, 412];
     disaster_type = 2;
 
     // Execute transaction (function call add_notification)
     // tx = await voting._new_notification(regions, disaster_type);
 
     tx_params = {
-        gasLimit: 10000000 
+        gasLimit: 1000000 
         // new_notification 245634, 228832, 263328, increases quickly
         // deploy 1630540
     }
