@@ -10,6 +10,7 @@ import "../contract-lib/hardhat/console.sol";
 /// @notice Allows authorised users to add notifications and when consensus is reached create a list of disasters
 /// @dev Remove console.sol before final deploy
 /// @dev Could add incentivisation through staking
+/// @dev NEED TO ADD EMIT EVENTS
 contract SocialActivation {
 
     // Minimum number of votes required for consensus to be reached
@@ -121,31 +122,14 @@ contract SocialActivation {
     }
 
 
-    /// @notice Counts total reputation of all active notifications in the input region/type
-    /// @dev (PUBLIC VIEW)
-    /// @param _region Region of notifications to check for (uint)
-    /// @param _disaster_type Type of disaster of notification to check for (uint)
-    /// @return count Total reputation (uint)
-    function _count_region(uint _region, uint _disaster_type) public view returns (uint count) {
-        require(_region <= MAX_REGION);
-        require(_disaster_type <= NUM_DISASTER_TYPES);
-        count = 0;
-        Notification[] memory current_region = region_to_type_count[_region][_disaster_type];
-        for (uint i = 0; i < current_region.length; i++) {
-            if (current_region[i].times_out > block.timestamp) {
-                count += _get_rep(current_region[i].creator);
-            }
-        }
-        return count;
-    }
-    
-
     /// @notice Checks if consensus exists in given region/type, creates disaster_confirmed value, deletes notifications in given region/type
     /// @dev (PUBLIC)
     /// @param _region Region of notifications to check for (uint)
     /// @param _disaster_type Type of disaster of notification to check for (uint)
     function _confirm_consensus(uint _region, uint _disaster_type) public {
         // Counts reputation from all notifications in given region/type
+        require(_region <= MAX_REGION);
+        require(_disaster_type <= NUM_DISASTER_TYPES);
         uint count = _count_region(_region, _disaster_type);
         require(count >= THRESHOLD, "Consensus has not been reached");
         uint first_notification = MAX_TIME;
@@ -170,6 +154,23 @@ contract SocialActivation {
         // Remove all notifications for that region and disaster type after consensus found
         delete region_to_type_count[_region][_disaster_type];
         // Maybe incentivise by giving 10% stake to msg.sender at this point
+    }
+
+
+    /// @notice Counts total reputation of all active notifications in the input region/type
+    /// @dev (PUBLIC VIEW)
+    /// @param _region Region of notifications to check for (uint)
+    /// @param _disaster_type Type of disaster of notification to check for (uint)
+    /// @return count Total reputation (uint)
+    function _count_region(uint _region, uint _disaster_type) public view returns (uint count) {
+        count = 0;
+        Notification[] memory current_region = region_to_type_count[_region][_disaster_type];
+        for (uint i = 0; i < current_region.length; i++) {
+            if (current_region[i].times_out > block.timestamp) {
+                count += _get_rep(current_region[i].creator);
+            }
+        }
+        return count;
     }
 
 
