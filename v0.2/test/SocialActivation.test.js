@@ -71,7 +71,7 @@ describe("SocialActivation Contract", function () {
         });
     });
 
-    describe("Add New Notification", function () {
+    describe("New Notification Mechanism", function () {
         it("Should not allow non-authorised users", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
@@ -195,6 +195,39 @@ describe("SocialActivation Contract", function () {
             await expect(tx_a).to.not.be.reverted;
             await expect(tx_b).to.not.be.reverted;
             await expect(tx_c).to.not.be.reverted;
+        });
+    });
+
+    describe ("Consensus Mechanism", function () {
+        it("", async function () {
+
+
+        });
+    });
+
+    describe("View function Check Active Notifications", function () {
+        it("", async function () {
+            
+
+        });
+    });
+
+    describe("View function Count Rep in Region", function () {
+        it("Should confirm region is inside MAX_REGION", async function () {
+            
+
+        });
+
+        it("Should confirm disaster type is correct", async function () {
+
+
+        });
+    });
+
+    describe("View function Calculate Reputation", function () {
+        it("", async function () {
+
+
         });
     });
 });
