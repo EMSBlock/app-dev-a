@@ -4,9 +4,12 @@ pragma solidity ^0.8.9;
 // console.log command
 import "../contract-lib/hardhat/console.sol";
 
-// NOTES
-// Inherint property (If many fake notifications given for certain locations the computational cost will increase for region)
 
+/// @title Social Activation of a Disaster from Disaster Notifications
+/// @author Robert Cowlishaw
+/// @notice Allows authorised users to add notifications and when consensus is reached create a list of disasters
+/// @dev Remove console.sol before final deploy
+/// @dev Could add incentivisation through staking
 contract SocialActivation {
 
     // Minimum number of votes required for consensus to be reached
@@ -21,13 +24,13 @@ contract SocialActivation {
     uint256 public num_disasters;
 
 
-    // Disaster Notification
+    // Disaster Notifications
     struct Notification {
         address creator;
         uint times_out;
     }
 
-    // Confirmed Disaster
+    // Confirmed Disasters
     struct Disaster {
         uint disaster_type;
         uint region;
@@ -36,30 +39,33 @@ contract SocialActivation {
     }
 
 
-    // Map user to authorised or not
+    // Is user authorised
+    // Address to authorised
     mapping (address => bool) public get_authorised;
 
     // Notifications made
+    // Address to number of total notifications
     mapping (address => uint) public num_notifications;
 
     // Notifications part of consensus
+    // Address to number of correct notifications
     mapping (address => uint) public num_correct_notifications;
 
-    // Map region to type list containing current count
-    //mapping (uint => Notification[][]) public region_to_type_count;
+    // List of all Notifications
+    // Region to type to Notifications list
     mapping (uint => mapping (uint => Notification[])) public region_to_type_count;
-    //mapping (uint => mapping (uint => mapping (address => uint) ) ) public region_to_type_count;
 
-    // Map user to notification locations
+    // List of Notifications for specific user
     // User to region to type to timestamp
     mapping (address => mapping (uint => mapping (uint => uint) ) ) public user_to_timestamp;
 
-    // Map disaster id to disaster
+    // List of disasters
+    // Disaster ID to Disaster list
     mapping (uint => Disaster) public disasters_confirmed;
 
     
-    // On deploy constructor
-    // Could add address as input to create the first authorised user
+    /// @notice On deploy constructor
+    /// @dev Maybe set owner to reputation of zero also, could also add address as input to create the first authorised user
     constructor() {
         get_authorised[msg.sender] = true;
         num_notifications[msg.sender] = 1;
@@ -67,6 +73,9 @@ contract SocialActivation {
     }
 
     
+    /// @notice Authorises input user address'
+    /// @dev (PUBLIC)
+    /// @param _new_address New address to authorise (address)
     function _authorise_user(address _new_address) public {
         require(get_authorised[msg.sender] == true, "Only authorised users can authorise new users");
         get_authorised[_new_address] = true;
@@ -75,42 +84,46 @@ contract SocialActivation {
     }
 
 
-    // (PUBLIC) creates new notification, including validating that notification is allowed to be given by user
+    /// @notice Creates new notification, including validating that notification is allowed to be given by user
+    /// @dev (PUBLIC)
+    /// @param _regions Array of regions of notification (uint[])
+    /// @param _disaster_type Type of disaster of notification (uint)
     function _new_notification(uint[] memory _regions, uint _disaster_type) public {
-        console.log("##### Testing checkpoint 0");
         require(get_authorised[msg.sender] == true, "User is not authorised");
         require(_disaster_type <= NUM_DISASTER_TYPES, "Not a classified type of disaster (0-5)");
-        console.log("##### Testing checkpoint 1");
         Notification memory notification = Notification({
             creator: msg.sender,
             times_out: block.timestamp + TIMEOUT
             // Could add stake amount too
         });
-        console.log("##### Testing checkpoint 2");
         // Increment how many notifications a user has made
         num_notifications[msg.sender] += _regions.length;
-        console.log("##### Testing checkpoint 3");
         // Checks if user has active notification in region/type and if not adds new notification
         for (uint i = 0; i < _regions.length; i++) {
-            console.log("##### Testing checkpoint 4");
             require(_check_active_notification(_regions[i], _disaster_type), "Address already has active notification at this region/type");
-            console.log("##### Testing checkpoint 5");
             user_to_timestamp[msg.sender][_regions[i]][_disaster_type] = block.timestamp + TIMEOUT;
             region_to_type_count[_regions[i]][_disaster_type].push(notification);
         }
-        console.log("##### Testing checkpoint Complete");
     }
 
 
-    // (PUBLIC VIEW) checks if the user already has an active notification at this region
-    function _check_active_notification(uint _region, uint _disaster_type) public view returns (bool) {
+    /// @notice Checks if the user already has an active notification at this region
+    /// @dev (PUBLIC VIEW)
+    /// @param _region Region of notification to check (uint)
+    /// @param _disaster_type Type of disaster of notification to check (uint)
+    /// @return active If the region/type has an active notification by the msg.sender (Bool)
+    function _check_active_notification(uint _region, uint _disaster_type) public view returns (bool active) {
         require(_region <= MAX_REGION, "Region is outside maximum value");
-        console.log("##### Testing checkpoint 4");
-        return (user_to_timestamp[msg.sender][_region][_disaster_type] < block.timestamp);
+        active = user_to_timestamp[msg.sender][_region][_disaster_type] < block.timestamp;
+        return active;
     }
 
 
-    // (PUBLIC VIEW) Counts total reputation of all active notifications in the input region
+    /// @notice Counts total reputation of all active notifications in the input region/type
+    /// @dev (PUBLIC VIEW)
+    /// @param _region Region of notifications to check for (uint)
+    /// @param _disaster_type Type of disaster of notification to check for (uint)
+    /// @return count Total reputation (uint)
     function _count_region(uint _region, uint _disaster_type) public view returns (uint count) {
         require(_region <= MAX_REGION);
         require(_disaster_type <= NUM_DISASTER_TYPES);
@@ -125,7 +138,10 @@ contract SocialActivation {
     }
     
 
-    // (PUBLIC) Checks if consensus exists in given region and type and creates disaster_confirmed value
+    /// @notice Checks if consensus exists in given region/type, creates disaster_confirmed value, deletes notifications in given region/type
+    /// @dev (PUBLIC)
+    /// @param _region Region of notifications to check for (uint)
+    /// @param _disaster_type Type of disaster of notification to check for (uint)
     function _confirm_consensus(uint _region, uint _disaster_type) public {
         uint count = _count_region(_region, _disaster_type);
         require(count >= THRESHOLD, "Consensus has not been reached");
@@ -148,17 +164,19 @@ contract SocialActivation {
             time_of_first_notification: first_notification - THRESHOLD,
             time_of_consensus: block.timestamp
         });
-
         // Remove all notifications for that region and disaster type after consensus found
         delete region_to_type_count[_region][_disaster_type];
-
         // Maybe incentivise by giving 10% stake to msg.sender at this point
     }
 
 
-    // (PUBLIC) Get reputation (THIS NEEDS MODIFIED AS CURRENTLY VERY SIMPLE)
-    function _get_rep(address _address_to_update) public view returns (uint) {
+    /// @notice Gets reputation of input address
+    /// @dev (PUBLIC VIEW) Needs modified as currently very simple 
+    /// @param _address_to_update Address to get the reputation of (address)
+    /// @return rep Reputation of the input address (uint)
+    function _get_rep(address _address_to_update) public view returns (uint rep) {
         // Can use number of correct notifications and number of total notifications
-        return num_correct_notifications[_address_to_update];// / num_notifications[_address_to_update];
+        rep = num_correct_notifications[_address_to_update];// / num_notifications[_address_to_update];
+        return rep;
     }
 }
