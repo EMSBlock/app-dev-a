@@ -6,7 +6,7 @@ const contractAddress = require("../contract-artifacts/contract-address.json");
 
 async function main() {   
     // Gets smart contract ABI
-    const Voting = await ethers.getContractFactory('Voting');
+    const Voting = await ethers.getContractFactory('SocialActivation');
     // Attatches contract address for IRL location
     const voting = await Voting.attach(contractAddress.contract_address);
 

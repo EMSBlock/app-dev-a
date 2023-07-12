@@ -7,7 +7,7 @@ import "../contract-lib/hardhat/console.sol";
 // NOTES
 // Inherint property (If many fake notifications given for certain locations the computational cost will increase for region)
 
-contract Voting {
+contract SocialActivation {
 
     // Minimum number of votes required for consensus to be reached
     uint256 public THRESHOLD = 10000;

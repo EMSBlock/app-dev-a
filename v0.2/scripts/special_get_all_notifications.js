@@ -8,7 +8,7 @@ async function main() {
     // Set notification id to return the data for
     const _notification_id = 1;
     // Gets smart contract ABI
-    const Voting = await ethers.getContractFactory('Voting');
+    const Voting = await ethers.getContractFactory('SocialActivation');
     // Attatches contract address for IRL location
     const voting = await Voting.attach(contractAddress.contract_address);
     // Execute transaction (function call get_notification return data)

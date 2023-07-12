@@ -5,7 +5,7 @@ const path = require("path");
 
 async function main() {
   // Gets smart contract ABI
-  const Voting = await hre.ethers.getContractFactory("Voting");
+  const Voting = await hre.ethers.getContractFactory("SocialActivation");
   // Deploys smart contract
   const voting = await Voting.deploy();
   // Waits until smart contract is deployed and returns tx
@@ -20,7 +20,7 @@ async function main() {
 function save_artifacts(voting) {
   const fs = require("fs");
 
-  const voting_artifact = artifacts.readArtifactSync("Voting");
+  const voting_artifact = artifacts.readArtifactSync("SocialActivation");
 
   // Create contract artifacts for web app
   const dir_web_artifacts = path.join(__dirname, "..", "web", "src", "contract-artifacts");
