@@ -18,7 +18,7 @@ describe("SocialActivation Contract", function () {
     async function fixtureDeployVotingContract() {
   
         // Contracts are deployed using the first signer/account by default
-        const [owner, acc_b, acc_c] = await ethers.getSigners();
+        const [owner, acc_b, acc_c, acc_d] = await ethers.getSigners();
 
         // console.log("Account Address'");
         // console.log("Owner: ", owner.address);
@@ -28,9 +28,11 @@ describe("SocialActivation Contract", function () {
         const Contract = await ethers.getContractFactory("SocialActivation");
         const app = await Contract.deploy();
   
-      return { app, owner, acc_b, acc_c };
+      return { app, owner, acc_b, acc_c, acc_d };
     }
 
+    
+    // ###########################################################################
     describe("Deploy Contract", function () {
         it("Should set deployer to authorised user", async function () {
             const { app, owner } = await loadFixture(fixtureDeployVotingContract);
@@ -46,6 +48,8 @@ describe("SocialActivation Contract", function () {
         });
     });
 
+
+    // ###########################################################################
     describe("Authorise New Users", function () {
         it("Should be deployed with only owner being authorised by default", async function () {
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
@@ -71,6 +75,49 @@ describe("SocialActivation Contract", function () {
         });
     });
 
+
+    // ###########################################################################
+    describe("View function Check Active Notifications", function () {
+        it("Should return true if no notification exists (New notification is acceptable)", async function () {
+            // Deploy Contract
+            const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
+            // Authorise acc_b
+            await app.connect(owner)._authorise_user(acc_b.address);
+            // Check if notification exists (Should return true)
+            expect(await app.connect(acc_b)._check_active_notification(notification_reg.in_regions[0], notification_reg.in_type, notification_reg.tx_params)).to.equal(true);
+        });
+        it("Should return true if notification exists but is outdated (New notification is acceptable)", async function () {
+            // Deploy Contract
+            const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
+            // Authorise acc_b
+            await app.connect(owner)._authorise_user(acc_b.address);
+            // Add notification
+            tx = await app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+            // Get timestamp of when notification timeout occurs
+            timeout = await time.latest() + parseInt(await app.TIMEOUT());
+            // Time travel to after notification becomes inactive (5 is arbitrary)
+            time.increaseTo(timeout+5);
+            // Check if notification exists and is outdated (Should return true)
+            expect(await app.connect(acc_b)._check_active_notification(notification_reg.in_regions[0], notification_reg.in_type, notification_reg.tx_params)).to.equal(true);
+        });
+        it("Should return false if notification exists and is current (New notification is not acceptable)", async function () {
+            // Deploy Contract
+            const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
+            // Authorise acc_b
+            await app.connect(owner)._authorise_user(acc_b.address);
+            // Add notification
+            tx = await app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+            // Get timestamp of when notification timeout occurs
+            timeout = await time.latest() + parseInt(await app.TIMEOUT());
+            // Time travel to after notification becomes inactive (5 is arbitrary)
+            time.increaseTo(timeout-1);
+            // Check if notification exists and is outdated (Should return true)
+            expect(await app.connect(acc_b)._check_active_notification(notification_reg.in_regions[0], notification_reg.in_type, notification_reg.tx_params)).to.equal(false);
+        });
+    });
+
+
+    // ###########################################################################
     describe("New Notification Mechanism", function () {
         it("Should not allow non-authorised users", async function () {
             // Deploy Contract
@@ -80,20 +127,18 @@ describe("SocialActivation Contract", function () {
             // Expect Failure
             await expect(tx).to.be.revertedWith("User is not authorised");
         });
-
         it("Should not allow unknown value for type of disaster", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
             // Authorise acc_b
             await app.connect(owner)._authorise_user(acc_b.address);
             // Get value of threshold defined in smart contract
-            threshold = await app.THRESHOLD();
+            threshold = await app.NUM_DISASTER_TYPES();
             // Make new notification with acc_b
             tx = app.connect(acc_b)._new_notification(notification_reg.in_regions, threshold+1, notification_reg.tx_params);
             // Expect Failure
             await expect(tx).to.be.revertedWith("Not a classified type of disaster (0-5)");
         });
-
         it("Should not allow value for region outside of boundary", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
@@ -106,7 +151,6 @@ describe("SocialActivation Contract", function () {
             // Expect Failure
             await expect(tx).to.be.revertedWith("Region is outside maximum value");
         });
-
         it("Should be successfull with authorised user, known type of disaster in region boundary", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
@@ -117,20 +161,17 @@ describe("SocialActivation Contract", function () {
             // Expect Success
             await expect(tx).not.to.be.reverted;
         });
-
         it("Should update number of notifications by user", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
             // Authorise acc_b
             await app.connect(owner)._authorise_user(acc_b.address);
-            // Expect number of notifications to equal 0
-            expect(await app.num_notifications(acc_b.address)).to.equal(0);
+            start_num = parseInt(await app.num_notifications(acc_b.address));
             // Make new notification with acc_b
             await app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
             // Expect number of notifications to increase to 3
-            expect(await app.num_notifications(acc_b.address)).to.equal(notification_reg.in_regions.length);
+            expect(await app.num_notifications(acc_b.address)).to.equal(start_num+notification_reg.in_regions.length);
         });
-
         it("Should update user saved timestamps", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
@@ -145,7 +186,6 @@ describe("SocialActivation Contract", function () {
                 expect(await app.user_to_timestamp(acc_b.address, notification_reg.in_regions[i], notification_reg.in_type)).to.equal(timeout);
             }
         });
-
         it("Should update main notification list", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
@@ -163,7 +203,6 @@ describe("SocialActivation Contract", function () {
                 expect(array_temp.times_out).to.equal(timeout);
             }
         });
-
         it("Should not allow second notification within time frame", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
@@ -180,7 +219,6 @@ describe("SocialActivation Contract", function () {
             // This should pass as notification is inactive
             await expect(app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params)).to.not.be.reverted;
         });
-
         it("Should allow many notifications from unique users in same region", async function () {
             // Deploy Contract
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
@@ -198,36 +236,130 @@ describe("SocialActivation Contract", function () {
         });
     });
 
+
+    // ###########################################################################
     describe ("Consensus Mechanism", function () {
-        it("", async function () {
-
-
+        it("Should only find consensus when notification threshold met", async function () {
+            // Deploy Contract
+            const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
+            // Authorise acc_b and acc_c
+            await app.connect(owner)._authorise_user(acc_b.address);
+            await app.connect(owner)._authorise_user(acc_c.address);
+            // Get threshold
+            threshold = parseInt(await app.THRESHOLD());
+            // Make sure threshold is more than zero
+            expect(threshold).to.be.above(0, "Threshold is 0 or less, this is invalid");
+            // If no notifications fail
+            await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.be.revertedWith("Consensus has not been reached");
+            if (threshold == 1) {
+                // Consensus passes with 1 notification
+                await app.connect(owner)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.not.be.reverted;
+            } else if (threshold == 2) {
+                // Consensus fails with 1 notification but passes with 2 notifications
+                await app.connect(owner)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.be.revertedWith("Consensus has not been reached");
+                await app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.not.be.reverted;
+            } else if (threshold == 3) {
+                // Consensus fails with 1 and 2 notifications but passes with 3 notifications
+                await app.connect(owner)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.be.revertedWith("Consensus has not been reached");
+                await app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.be.revertedWith("Consensus has not been reached");
+                await app.connect(acc_c)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.not.be.reverted;
+            } else {
+                // If threshold is set to more than 3 test is not run
+                console.log("This test only gets completed on threshold 3 or less");
+            }
+        });
+        it("Should allow anyone to find consensus even if not authorised", async function () {
+            // Deploy Contract
+            const { app, owner, acc_b, acc_c, acc_d } = await loadFixture(fixtureDeployVotingContract);
+            // Authorise acc_b and acc_c
+            await app.connect(owner)._authorise_user(acc_b.address);
+            await app.connect(owner)._authorise_user(acc_c.address);
+            // Get threshold
+            threshold = parseInt(await app.THRESHOLD());
+            if (threshold <= 3) {
+                await app.connect(owner)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app.connect(acc_d)._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.be.revertedWith("Consensus has not been reached");
+                await app.connect(acc_c)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app.connect(acc_d)._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.not.be.reverted;
+            } else {
+                // If threshold is set to more than 3 test is not run
+                console.log("This test only gets completed on threshold 3 or less");
+            }
+        });
+        it("Should clear notifications when consensus found", async function () {
+            // Deploy Contract
+            const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
+            // Authorise acc_b and acc_c
+            await app.connect(owner)._authorise_user(acc_b.address);
+            await app.connect(owner)._authorise_user(acc_c.address);
+            // Get threshold
+            threshold = parseInt(await app.THRESHOLD());
+            if (threshold <= 3) {
+                await app.connect(owner)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.be.revertedWith("Consensus has not been reached");
+                await app.connect(acc_c)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                // Pass as list exists
+                expect(app.region_to_type_count(notification_reg.in_regions[0], notification_reg.in_type, 0)).to.not.be.reverted;
+                // Find consensus which should clear list
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.not.be.reverted;
+                // Fail as list no longer exists
+                expect(app.region_to_type_count(notification_reg.in_regions[0], notification_reg.in_type, 0)).to.be.reverted;
+            } else {
+                // If threshold is set to more than 3 test is not run
+                console.log("This test only gets completed on threshold 3 or less");
+            }
+        });
+        it("Should not find consensus twice in a row without new notifications", async function () {
+            // Deploy Contract
+            const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
+            // Authorise acc_b and acc_c
+            await app.connect(owner)._authorise_user(acc_b.address);
+            await app.connect(owner)._authorise_user(acc_c.address);
+            // Get threshold
+            threshold = parseInt(await app.THRESHOLD());
+            if (threshold <= 3) {
+                await app.connect(owner)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await app.connect(acc_b)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.be.revertedWith("Consensus has not been reached");
+                await app.connect(acc_c)._new_notification(notification_reg.in_regions, notification_reg.in_type, notification_reg.tx_params);
+                // Find consensus which should clear list
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.not.be.reverted;
+                // Fail as consensus not found twice in a row
+                await expect(app._confirm_consensus(notification_reg.in_regions[0], notification_reg.in_type)).to.be.revertedWith("Consensus has not been reached");
+            } else {
+                // If threshold is set to more than 3 test is not run
+                console.log("This test only gets completed on threshold 3 or less");
+            }
         });
     });
 
-    describe("View function Check Active Notifications", function () {
-        it("", async function () {
-            
 
-        });
-    });
+    
+    // ###########################################################################
+    // describe("View function Count Rep in Region", function () {
+    //     it("Should confirm region is inside MAX_REGION", async function () {
+    //         assert.fail(0, 1, 'Expect not created');
 
-    describe("View function Count Rep in Region", function () {
-        it("Should confirm region is inside MAX_REGION", async function () {
-            
+    //     });
 
-        });
+    //     it("Should confirm disaster type is correct", async function () {
+    //         assert.fail(0, 1, 'Expect not created');
 
-        it("Should confirm disaster type is correct", async function () {
+    //     });
+    // });
 
+    // describe("View function Calculate Reputation", function () {
+    //     it("", async function () {
+    //         assert.fail(0, 1, 'Expect not created');
 
-        });
-    });
-
-    describe("View function Calculate Reputation", function () {
-        it("", async function () {
-
-
-        });
-    });
+    //     });
+    // });
 });

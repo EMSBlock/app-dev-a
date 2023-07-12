@@ -13,15 +13,17 @@ import "../contract-lib/hardhat/console.sol";
 contract SocialActivation {
 
     // Minimum number of votes required for consensus to be reached
-    uint256 public THRESHOLD = 10000;
+    uint256 public THRESHOLD = 3;
     // Max time after creation that notification is considered active
-    uint256 public TIMEOUT = 10;
+    uint256 public TIMEOUT = 1000;
     // Max number of regions available (Currently 1 degree lat lon)
     uint256 public MAX_REGION = 360 * 180;
     // Number of types of disasters
     uint8 public NUM_DISASTER_TYPES = 5;    // One more than given as 0 also allowed
     // Counter for number of confirmed disasters
     uint256 public num_disasters;
+
+    uint256 public MAX_TIME = 9999999999999;
 
 
     // Disaster Notifications
@@ -79,8 +81,8 @@ contract SocialActivation {
     function _authorise_user(address _new_address) public {
         require(get_authorised[msg.sender] == true, "Only authorised users can authorise new users");
         get_authorised[_new_address] = true;
-        num_notifications[_new_address] = 0;
-        num_correct_notifications[_new_address] = 0;
+        num_notifications[_new_address] = 1;
+        num_correct_notifications[_new_address] = 1;
     }
 
 
@@ -101,6 +103,7 @@ contract SocialActivation {
         // Checks if user has active notification in region/type and if not adds new notification
         for (uint i = 0; i < _regions.length; i++) {
             require(_check_active_notification(_regions[i], _disaster_type), "Address already has active notification at this region/type");
+            require(_regions[i] <= MAX_REGION, "Region is outside maximum value");
             user_to_timestamp[msg.sender][_regions[i]][_disaster_type] = block.timestamp + TIMEOUT;
             region_to_type_count[_regions[i]][_disaster_type].push(notification);
         }
@@ -113,7 +116,6 @@ contract SocialActivation {
     /// @param _disaster_type Type of disaster of notification to check (uint)
     /// @return active If the region/type has an active notification by the msg.sender (Bool)
     function _check_active_notification(uint _region, uint _disaster_type) public view returns (bool active) {
-        require(_region <= MAX_REGION, "Region is outside maximum value");
         active = user_to_timestamp[msg.sender][_region][_disaster_type] < block.timestamp;
         return active;
     }
@@ -143,9 +145,10 @@ contract SocialActivation {
     /// @param _region Region of notifications to check for (uint)
     /// @param _disaster_type Type of disaster of notification to check for (uint)
     function _confirm_consensus(uint _region, uint _disaster_type) public {
+        // Counts reputation from all notifications in given region/type
         uint count = _count_region(_region, _disaster_type);
         require(count >= THRESHOLD, "Consensus has not been reached");
-        uint first_notification;
+        uint first_notification = MAX_TIME;
         // Update correct notifications count
         Notification[] memory current_region = region_to_type_count[_region][_disaster_type];
         for (uint i = 0; i < current_region.length; i++) {
