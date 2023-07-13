@@ -3,7 +3,7 @@
 ### Setup
 
 Make sure you are using the correct version of nvm. Different versions may not work. \\
-Current version used in development: "v18.16.0".
+Current version used in development: `v18.16.0`.
 
 Install npm packages
 

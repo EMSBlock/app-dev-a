@@ -14,7 +14,7 @@ Clean hardhat network
 npx hardhat clean
 ```
 
-Get test/example pre-funded accounts. This will create a file "./wallets-example.json". This can be used with metamask by adding the private keys.
+Get test/example pre-funded accounts. This will create a file `./wallets-example.json`. This can be used with metamask by adding the private keys.
 
 ```cmd
 npx hardhat accounts-example
@@ -34,4 +34,4 @@ Deploy Contract
 npx hardhat run scripts/deploy.js
 ```
 
-The app address is stored in "./dapp/dapp-data.json" as well as the contract ABI.
+The app address is stored in `./dapp/dapp-data.json` as well as the contract ABI.
