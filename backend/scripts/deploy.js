@@ -2,12 +2,23 @@
 
 const hre = require("hardhat");
 const path = require("path");
+const { Signer, Wallet } = require("ethers");
+const wallets = require("../wallets-example.json");
+
+// Converts private key to a signer
+async function key_to_signer(priv) {
+  const provider = hre.ethers.provider;
+  const signer_wallet = new Wallet(priv);
+  const signer = signer_wallet.connect(provider);
+  return signer;
+}
 
 async function main() {
+  
   // Gets smart contract ABI
   const Contract = await hre.ethers.getContractFactory("SocialActivation");
   // Deploys smart contract
-  const dapp = await Contract.deploy();
+  const dapp = await Contract.connect(await key_to_signer(wallets["a"]["private"])).deploy();
   // Waits until smart contract is deployed and returns tx
   const tx = await dapp.deployed();
   // Outputs transaction to console

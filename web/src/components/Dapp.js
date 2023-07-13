@@ -5,8 +5,7 @@ import { ethers } from "ethers";
 
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
-import contractData from "../contract-artifacts/contract-data.json";
-import contractAddress from "../contract-artifacts/contract-address.json";
+import dappData from "../dapp-artifacts/dapp-data.json";
 
 // All the logic of this dapp is contained in the Dapp component.
 // These other components are just presentational ones: they don't have any
@@ -14,7 +13,7 @@ import contractAddress from "../contract-artifacts/contract-address.json";
 import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
 import { Loading } from "./Loading";
-import { CreateNotification } from "./CreateNotification";
+import { NewNotification } from "./NewNotification";
 import { GetNotifications } from "./GetNotifications";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
@@ -86,7 +85,7 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
             <h1>
-              Voting Contract Web Interface
+              DisasterWeb
             </h1>
             <p>
               Welcome <b>{this.state.selectedAddress}</b>
@@ -123,22 +122,18 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
 
-            {/*
-              This component displays a form that the user can use to send a 
-              transaction and transfer some tokens.
-              The component doesn't have logic, it just calls the transferTokens
-              callback.
-            */}
+            {/* // 
+            //   This component displays a form that the user can use to send a 
+            //   transaction and transfer some tokens.
+            //   The component doesn't have logic, it just calls the transferTokens
+            //   callback.
+            //  */}
             {(
-              <CreateNotification
-                createNotification={(_note) =>
-                  this._create_notification(_note)
-                }
-              />
+              <NewNotification new_notification={(_type, _region) => this._s_new_notification(_type, _region)}/>
             )}
           </div>
-        </div>
-        
+        </div>  
+        {/* 
         <div className="row">
           <div className="col-12">
             {(
@@ -163,9 +158,9 @@ export class Dapp extends React.Component {
               </thead>
               <tbody id="notifications-table"></tbody>
             </table>
-          </div>          
-        </div>        
-      </div>
+          </div>           
+        </div>   */}     
+      </div>   
     );
   }
 
@@ -226,7 +221,7 @@ export class Dapp extends React.Component {
       
       this._initialize(newAddress);
     });
-    this._get_notification();
+    //this._get_notification();
   }
 
   _initialize(userAddress) {
@@ -251,8 +246,8 @@ export class Dapp extends React.Component {
     // Then, we initialize the contract using that provider and the token's
     // artifact. You can do this same thing with your contracts.
     this._voting = new ethers.Contract(
-      contractAddress.contract_address,
-      contractData.abi,
+      dappData.dapp_address,
+      dappData.abi,
       this._provider.getSigner(0)
     );
   }
@@ -260,50 +255,52 @@ export class Dapp extends React.Component {
 
   
 
-  async _get_notification() {
-    //var message = "No notifications";
-    const messages = [];
-    var notification = 0;
-    var note = "Missing Notification"
-    let x = 0;
-    try {
-      try {
-        x = await this._voting.notificationsCount();
-        if (x > 0) {
-          for (let i = 0; i < x; i++) {
-            messages.push(await this._voting.notifications(i));
-          }
-        }
-      } catch (error) {
-        messages.push("Problem")
-      } finally {
-        //document.getElementById("resultDiv").innerHTML = messages;
-      }
-    } catch (error) {
-      // We check the error code to see if this error was produced because the
-      // user rejected a tx. If that's the case, we do nothing.
-      if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        return;
-      }
-      // Other errors are logged and stored in the Dapp's state. This is used to
-      // show them to the user, and for debugging.
-      console.error(error);
-      this.setState({ transactionError: error });
-    } finally {
-      // If we leave the try/catch, we aren't sending a tx anymore, so we clear
-      // this part of the state.
-      this.setState({ txBeingSent: undefined });
-      this.setState({notifications_list: messages});
-    }
-  }
+  // async _get_notification() {
+  //   //var message = "No notifications";
+  //   const messages = [];
+  //   var notification = 0;
+  //   var note = "Missing Notification"
+  //   let x = 0;
+  //   try {
+  //     try {
+  //       x = await this._voting.notificationsCount();
+  //       if (x > 0) {
+  //         for (let i = 0; i < x; i++) {
+  //           messages.push(await this._voting.notifications(i));
+  //         }
+  //       }
+  //     } catch (error) {
+  //       messages.push("Problem")
+  //     } finally {
+  //       //document.getElementById("resultDiv").innerHTML = messages;
+  //     }
+  //   } catch (error) {
+  //     // We check the error code to see if this error was produced because the
+  //     // user rejected a tx. If that's the case, we do nothing.
+  //     if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+  //       return;
+  //     }
+  //     // Other errors are logged and stored in the Dapp's state. This is used to
+  //     // show them to the user, and for debugging.
+  //     console.error(error);
+  //     this.setState({ transactionError: error });
+  //   } finally {
+  //     // If we leave the try/catch, we aren't sending a tx anymore, so we clear
+  //     // this part of the state.
+  //     this.setState({ txBeingSent: undefined });
+  //     this.setState({notifications_list: messages});
+  //   }
+  // }
 
-  async _create_notification(_note) {
+  async _s_new_notification(_type, _region) {
     if (this.txBeingSent === undefined) {
       this.setState({txBeingSent: true})
       try{
-        this._voting.add_notification(_note.toString()).then(() => {
-          this._get_notification();
-        });
+        await this._voting._new_notification([_region], _type);
+        //.then(() => {
+        //   //this._get_notification();
+        //   console.log("the");
+        // });
       } catch (error) {
         // We check the error code to see if this error was produced because the
         // user rejected a tx. If that's the case, we do nothing.
@@ -324,29 +321,29 @@ export class Dapp extends React.Component {
   }
 
 
-  async _submit_vote(_id) {
-    if (this.txBeingSent === undefined) {
-      this.setState({txBeingSent: true})
-      try{
-        await this._voting.vote(_id);
-      } catch (error) {
-        // We check the error code to see if this error was produced because the
-        // user rejected a tx. If that's the case, we do nothing.
-        if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-          return;
-        }
-        // Other errors are logged and stored in the Dapp's state. This is used to
-        // show them to the user, and for debugging.
-        console.error(error);
-        this.setState({ transactionError: error });
-      } finally {
-        // If we leave the try/catch, we aren't sending a tx anymore, so we clear
-        // this part of the state.
-        this.setState({ txBeingSent: undefined });
-        this._get_notification();
-      }
-    }
-  }
+  // async _submit_vote(_id) {
+  //   if (this.txBeingSent === undefined) {
+  //     this.setState({txBeingSent: true})
+  //     try{
+  //       await this._voting.vote(_id);
+  //     } catch (error) {
+  //       // We check the error code to see if this error was produced because the
+  //       // user rejected a tx. If that's the case, we do nothing.
+  //       if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+  //         return;
+  //       }
+  //       // Other errors are logged and stored in the Dapp's state. This is used to
+  //       // show them to the user, and for debugging.
+  //       console.error(error);
+  //       this.setState({ transactionError: error });
+  //     } finally {
+  //       // If we leave the try/catch, we aren't sending a tx anymore, so we clear
+  //       // this part of the state.
+  //       this.setState({ txBeingSent: undefined });
+  //       this._get_notification();
+  //     }
+  //   }
+  // }
 
   async _notifications_folder() {
     //const fs = require("../../../node_modules/fs-extra/lib/fs");

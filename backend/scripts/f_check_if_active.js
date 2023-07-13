@@ -2,7 +2,18 @@
 
 const hre = require("hardhat");
 const path = require("path");
+const { Signer, Wallet } = require("ethers");
 const dapp_data = require("../dapp/dapp-data.json");
+const wallets = require("../wallets-example.json");
+
+// Converts private key to a signer
+async function key_to_signer(priv) {
+    const provider = hre.ethers.provider;
+    const signer_wallet = new Wallet(priv);
+    const signer = signer_wallet.connect(provider);
+    return signer;
+  }
+  
 
 async function main() {   
     // Gets smart contract ABI
@@ -17,7 +28,7 @@ async function main() {
         gasLimit: 100000
     }
 
-    tx = await dapp._check_active_notification(region, disaster_type, tx_params);
+    tx = await dapp.connect(await key_to_signer(wallets["a"]["private"]))._check_active_notification(region, disaster_type, tx_params);
     // Output transaction to console
     console.log(tx);
 }

@@ -1,21 +1,37 @@
-# Development App for Phase A (SEM Activation)
+# Backend
 
-## Requirements
+### Setup
 
-### Abstract Requirements
+Start hardhat network (Ctrl+C to stop)
 
-- Decrease time from event to activation
-- Distributed Authorised User
-- Distributed Verifier
-- Make it easy for new users to join
+```cmd
+npx hardhat node
+```
 
-### Technical Requirements
+Clean hardhat network
 
-- Stuff
+```cmd
+npx hardhat clean
+```
 
+Get test/example pre-funded accounts. This will create a file "./wallets-example.json". This can be used with metamask by adding the private keys.
 
-## Plan
+```cmd
+npx hardhat accounts-example
+```
 
-- [ ] Implement a basic voting contract that allows for people to agree with a notification
-- [ ] Spread votes so each is unique and then consensus is found across each
-- [ ] Build a basic front-end to show the system to people
+To check all is working correctly
+
+```cmd
+npx hardhat test
+```
+
+### Deploy Contracts
+
+Deploy Contract
+
+```cmd
+npx hardhat run scripts/deploy.js
+```
+
+The app address is stored in "./dapp/dapp-data.json" as well as the contract ABI.
