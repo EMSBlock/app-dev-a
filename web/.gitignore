@@ -1,6 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-src/contract-artifacts
+src/dapp-artifacts
 package-lock.json
 
 # dependencies
