@@ -2,13 +2,13 @@
 
 const hre = require("hardhat");
 const path = require("path");
-const contractAddress = require("../contract-artifacts/contract-address.json");
+const dapp = require("../artifacts/app-data.json");
 
 async function main() {   
     // Gets smart contract ABI
-    const Voting = await ethers.getContractFactory('SocialActivation');
+    const Contract = await ethers.getContractFactory('SocialActivation');
     // Attatches contract address for IRL location
-    const voting = await Voting.attach(contractAddress.contract_address);
+    const dapp = await Contract.attach(dapp.app_address);
 
     // Input values
     regions = [453, 543, 412];
