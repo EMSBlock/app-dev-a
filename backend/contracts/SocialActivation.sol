@@ -81,6 +81,7 @@ contract SocialActivation {
     /// @param _new_address New address to authorise (address)
     function _authorise_user(address _new_address) public {
         require(get_authorised[msg.sender] == true, "Only authorised users can authorise new users");
+        require(get_authorised[_new_address] == false, "New user is already authorised");
         get_authorised[_new_address] = true;
         num_notifications[_new_address] = 1;
         num_correct_notifications[_new_address] = 1;
@@ -115,7 +116,7 @@ contract SocialActivation {
     /// @dev (PUBLIC VIEW)
     /// @param _region Region of notification to check (uint)
     /// @param _disaster_type Type of disaster of notification to check (uint)
-    /// @return active If the region/type has an active notification by the msg.sender (Bool)
+    /// @return active If the region/type has no active notification by the msg.sender (Bool)
     function _check_active_notification(uint _region, uint _disaster_type) public view returns (bool active) {
         active = user_to_timestamp[msg.sender][_region][_disaster_type] < block.timestamp;
         return active;

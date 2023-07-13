@@ -33,7 +33,10 @@ function save_artifacts(dapp) {
   output_artifacts = jsonConcat({ dapp_address: dapp.address }, dapp_artifact);
 
   // Create contract artifacts for general use
-  const dir_general_artifacts = path.join(__dirname, "..", "artifacts");
+  const dir_general_artifacts = path.join(__dirname, "..", "dapp");
+  if (!fs.existsSync(dir_general_artifacts)) {
+    fs.mkdirSync(dir_general_artifacts);
+  }
   fs.writeFileSync(
     path.join(dir_general_artifacts, "dapp-data.json"),
     JSON.stringify(output_artifacts, undefined, 2)

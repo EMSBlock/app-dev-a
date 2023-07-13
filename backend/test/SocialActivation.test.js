@@ -89,10 +89,19 @@ describe("SocialActivation Contract", function () {
             const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
             expect(await app.get_authorised(acc_b.address)).to.equal(false);
             expect(await app.get_authorised(acc_c.address)).to.equal(false);
-            await expect(app.connect(acc_b)._authorise_user(acc_b.address, {gasLimit: 1000000})).to.be.revertedWith("Only authorised users can authorise new users");
+            await expect(app.connect(acc_b)._authorise_user(acc_c.address, {gasLimit: 1000000})).to.be.revertedWith("Only authorised users can authorise new users");
             expect(await app.get_authorised(acc_b.address)).to.equal(false);
             expect(await app.get_authorised(acc_c.address)).to.equal(false);
         });
+        it("Should not allow re-authoirsation of a user", async function () {
+            const { app, owner, acc_b, acc_c } = await loadFixture(fixtureDeployVotingContract);
+            expect(await app.get_authorised(acc_b.address)).to.equal(false);
+            await expect(app.connect(owner)._authorise_user(acc_b.address, {gasLimit: 1000000})).to.not.be.reverted;
+            expect(await app.get_authorised(acc_b.address)).to.equal(true);
+            await expect(app.connect(owner)._authorise_user(acc_b.address, {gasLimit: 1000000})).to.be.revertedWith("New user is already authorised");
+            expect(await app.get_authorised(acc_b.address)).to.equal(true);
+        });
+
     });
 
 

@@ -2,13 +2,13 @@
 
 const hre = require("hardhat");
 const path = require("path");
-const dapp = require("../artifacts/app-data.json");
+const dapp_data = require("../dapp/dapp-data.json");
 
 async function main() {   
     // Gets smart contract ABI
     const Contract = await ethers.getContractFactory('SocialActivation');
     // Attatches contract address for IRL location
-    const dapp = await Contract.attach(dapp.app_address);
+    const dapp = await Contract.attach(dapp_data.dapp_address);
 
     // Input values
     regions = [453, 543, 412];
@@ -19,11 +19,9 @@ async function main() {
 
     tx_params = {
         gasLimit: 1000000 
-        // new_notification 245634, 228832, 263328, increases quickly
-        // deploy 1630540
     }
 
-    tx = await voting._new_notification(regions, disaster_type, tx_params);
+    tx = await dapp._new_notification(regions, disaster_type, tx_params);
     // Output transaction to console
     console.log(tx);
 }
