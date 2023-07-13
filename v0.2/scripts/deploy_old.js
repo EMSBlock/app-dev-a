@@ -37,16 +37,16 @@ function save_artifacts(voting) {
   );
 
   // Create contract artifacts for general use
-  const dir_general_artifacts = path.join(__dirname, "..", "artifacts");
-  // if (!fs.existsSync(dir_general_artifacts)) {
-  //   fs.mkdirSync(dir_general_artifacts);
-  // }
+  const dir_general_artifacts = path.join(__dirname, "..", "contract-artifacts");
+  if (!fs.existsSync(dir_general_artifacts)) {
+    fs.mkdirSync(dir_general_artifacts);
+  }
   fs.writeFileSync(
-    path.join(dir_general_artifacts, "app.json"),
-    JSON.stringify({ app_address: voting.address }, undefined, 2)
+    path.join(dir_general_artifacts, "contract-address.json"),
+    JSON.stringify({ contract_address: voting.address }, undefined, 2)
   );
   fs.writeFileSync(
-    path.join(dir_general_artifacts, "app-data.json"),
+    path.join(dir_general_artifacts, "contract-data.json"),
     JSON.stringify(voting_artifact, null, 2)
   );
 

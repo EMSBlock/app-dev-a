@@ -12,6 +12,13 @@ module.exports = {
       url: "http://127.0.0.1:8545",
       //accounts: [creds.private_key]
     }
+  },
+
+  paths: {
+    sources: "./contracts",
+    tests: "./test",
+    cache: "./cache",
+    artifacts: "./artifacts"
   }
 
 };

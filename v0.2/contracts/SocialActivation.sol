@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 // console.log command
-import "../contract-lib/hardhat/console.sol";
+import "./lib/hardhat/console.sol";
 
 
 /// @title Social Activation of a Disaster from Disaster Notifications
