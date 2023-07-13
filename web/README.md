@@ -28,5 +28,3 @@ Host the production build
 ```cmd
 serve -s build
 ```
-
-### Deploy Contracts

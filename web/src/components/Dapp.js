@@ -14,10 +14,12 @@ import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
 import { Loading } from "./Loading";
 import { NewNotification } from "./NewNotification";
-import { GetNotifications } from "./GetNotifications";
+
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
-import { BuildNotificationsList } from "./BuildNotificationsList";
+
+import { GetNotifications } from "./old/GetNotifications";
+import { BuildNotificationsList } from "./old/BuildNotificationsList";
 import { NoTokensMessage } from "./NoTokensMessage";
 
 
